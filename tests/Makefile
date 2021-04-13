@@ -67,7 +67,7 @@ endif
 DIRS += shared_symbols
 
 ifndef MYST_SKIP_LIBCXX_TESTS
-DIRS += libcxx
+DIRS = libcxx libcxx libcxx libcxx libcxx
 endif
 
 ifndef MYST_USE_OECACHE
