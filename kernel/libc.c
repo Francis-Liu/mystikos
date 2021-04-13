@@ -51,7 +51,7 @@ char* strcpy(char* dest, const char* src)
     while (*src)
         *p++ = *src++;
 
-    *p = '\0';
+    //*p = '\0';
 
     return dest;
 }
