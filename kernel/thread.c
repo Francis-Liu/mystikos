@@ -277,12 +277,14 @@ void myst_zombify_thread(myst_thread_t* thread)
             _zombies_tail = _zombies_tail->zprev;
             _zombies_tail->znext = NULL;
 
+            myst_spin_lock(p->thread_lock);
             /* remove from groups list */
             if (p->group_prev)
                 p->group_prev->group_next = p->group_next;
 
             if (p->group_next)
                 p->group_next->group_prev = p->group_prev;
+            myst_spin_unlock(p->thread_lock);
 
             /* free the zombie */
             free(p);
