@@ -502,7 +502,6 @@
 /app/trivially_copyable.pass.cpp.exe
 /app/truename.pass.cpp.exe
 /app/try_lock.pass.cpp.exe
-/app/try_lock_for.pass.cpp.exe
 /app/try_lock_shared.pass.cpp.exe
 /app/tuple.by.type.pass.cpp.exe
 /app/tuple.include.utility.pass.cpp.exe
@@ -585,10 +584,8 @@
 /app/void_pointer.pass.cpp.exe
 /app/void_t.pass.cpp.exe
 /app/wait.pass.cpp.exe
-/app/wait_for.pass.cpp.exe
 /app/wait_for_pred.pass.cpp.exe
 /app/wait_pred.pass.cpp.exe
-/app/wait_until.pass.cpp.exe
 /app/wait_until_pred.pass.cpp.exe
 /app/wcerr.pass.cpp.exe
 /app/wchar_pointer.pass.cpp.exe
