@@ -1,13 +1,25 @@
+#include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
 
 #include <myst/buf.h>
 #include <myst/eraise.h>
+#include <myst/file.h>
 #include <myst/hostfile.h>
+#include <myst/paths.h>
 #include <myst/syscall.h>
 #include <myst/tcall.h>
 #include <myst/trace.h>
 #include <myst/uid_gid.h>
+
+struct linux_dirent64
+{
+    unsigned long d_ino;     /* 64-bit inode number */
+    unsigned long d_off;     /* 64-bit offset to next structure */
+    unsigned short d_reclen; /* Size of this dirent */
+    unsigned char d_type;    /* File type */
+    char d_name[];           /* Filename (null-terminated) */
+};
 
 static int _get_host_uid_gid(uid_t* host_uid, gid_t* host_gid)
 {
@@ -47,6 +59,18 @@ static ssize_t _host_read(int fd, void* buf, size_t count)
 {
     long params[6] = {(long)fd, (long)buf, (long)count};
     return (ssize_t)myst_tcall(SYS_read, params);
+}
+
+static ssize_t _host_readlink(const char* pathname, void* buf, size_t bufsiz)
+{
+    long params[6] = {(long)pathname, (long)buf, (long)bufsiz};
+    return (ssize_t)myst_tcall(SYS_readlink, params);
+}
+
+static ssize_t _host_getdents64(int fd, void* dirp, size_t count)
+{
+    long params[6] = {(long)fd, (long)dirp, (long)count};
+    return (long)myst_tcall(SYS_getdents64, params);
 }
 
 int myst_load_host_file(const char* path, void** data_out, size_t* size_out)
@@ -112,6 +136,126 @@ done:
 
     if (locals)
         free(locals);
+
+    return ret;
+}
+
+int myst_copy_host_directory_recursively(
+    const char* src_dir,
+    const char* dst_dir,
+    bool ignore_errors)
+{
+    int ret = 0;
+    int fd = -1;
+    int new_fd = -1;
+    long nread;
+    char d_type;
+    void* buf = NULL;
+    size_t buf_size;
+    struct linux_dirent64* d;
+    struct locals
+    {
+        char buf[BUFSIZ];
+        char symlink_target[BUFSIZ];
+        char src_path[PATH_MAX];
+        char dst_path[PATH_MAX];
+    };
+    struct locals* locals = NULL;
+
+    if (!src_dir || !dst_dir)
+        ERAISE(-EINVAL);
+
+    ECHECK(fd = _host_open(src_dir, O_RDONLY | O_DIRECTORY, 0));
+
+    if (!(locals = calloc(1, sizeof(struct locals))))
+        ERAISE(-ENOMEM);
+
+    ECHECK(myst_mkdirhier(dst_dir, 07555));
+
+    for (;;)
+    {
+        ECHECK(nread = _host_getdents64(fd, locals->buf, BUFSIZ));
+
+        if (nread == 0)
+            break;
+
+        for (long bpos = 0; bpos < nread;)
+        {
+            d = (struct linux_dirent64*)(locals->buf + bpos);
+            bpos += d->d_reclen;
+
+            if (strcmp(d->d_name, ".") == 0 || strcmp(d->d_name, "..") == 0)
+                continue;
+
+            d_type = d->d_type;
+            if (d_type != DT_DIR && d_type != DT_REG && d_type != DT_LNK)
+                continue;
+
+            ECHECK(myst_make_path(
+                locals->src_path,
+                sizeof(locals->src_path),
+                src_dir,
+                d->d_name));
+            ECHECK(myst_make_path(
+                locals->dst_path,
+                sizeof(locals->dst_path),
+                dst_dir,
+                d->d_name));
+            if (d_type == DT_DIR)
+            {
+                ECHECK(myst_copy_host_directory_recursively(
+                    locals->src_path, locals->dst_path, ignore_errors));
+            }
+            else if (d_type == DT_REG)
+            {
+                if (myst_load_host_file(locals->src_path, &buf, &buf_size) < 0)
+                {
+                    if (ignore_errors)
+                        continue;
+                    ERAISE(-EINVAL);
+                }
+                ECHECK(new_fd = creat(locals->dst_path, 06444));
+                ECHECK(myst_write_file_fd(new_fd, buf, buf_size));
+
+                if (new_fd != -1)
+                {
+                    close(new_fd);
+                    new_fd = -1;
+                }
+
+                if (buf)
+                {
+                    free(buf);
+                    buf = NULL;
+                }
+            }
+            else if (d_type == DT_LNK)
+            {
+                ssize_t n = _host_readlink(
+                    locals->src_path,
+                    locals->symlink_target,
+                    sizeof(locals->symlink_target));
+                ECHECK(n);
+
+                locals->symlink_target[n] = '\0';
+                ECHECK(symlink(locals->symlink_target, locals->dst_path));
+            }
+        }
+    }
+
+done:
+
+    if (fd != -1)
+        close(fd);
+
+    if (locals)
+        free(locals);
+
+    if (new_fd != -1)
+        close(new_fd);
+
+    if (buf)
+        free(buf);
 
     return ret;
 }

@@ -40,6 +40,7 @@
 #include <myst/stack.h>
 #include <myst/strings.h>
 #include <myst/syscall.h>
+#include <myst/sysfs.h>
 #include <myst/thread.h>
 #include <myst/time.h>
 #include <myst/times.h>
@@ -807,6 +808,9 @@ int myst_enter_kernel(myst_kernel_args_t* args)
     ECHECK(_process_mount_configuration(args->mounts));
 
     ECHECK(_copy_host_etc_files());
+
+    /* Setup sysfs */
+    sysfs_setup();
 
     /* Set the 'run-proc' which is called by the target to run new threads */
     ECHECK(myst_tcall_set_run_thread_function(myst_run_thread));
