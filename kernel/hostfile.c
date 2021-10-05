@@ -7,6 +7,7 @@
 #include <myst/file.h>
 #include <myst/hostfile.h>
 #include <myst/paths.h>
+#include <myst/printf.h>
 #include <myst/syscall.h>
 #include <myst/tcall.h>
 #include <myst/trace.h>
@@ -170,7 +171,7 @@ int myst_copy_host_directory_recursively(
     if (!(locals = calloc(1, sizeof(struct locals))))
         ERAISE(-ENOMEM);
 
-    ECHECK(myst_mkdirhier(dst_dir, 07555));
+    ECHECK(myst_mkdirhier(dst_dir, 0755));
 
     for (;;)
     {
@@ -214,14 +215,11 @@ int myst_copy_host_directory_recursively(
                         continue;
                     ERAISE(-EINVAL);
                 }
-                ECHECK(new_fd = creat(locals->dst_path, 06444));
+                ECHECK(new_fd = creat(locals->dst_path, 0644));
                 ECHECK(myst_write_file_fd(new_fd, buf, buf_size));
 
-                if (new_fd != -1)
-                {
-                    close(new_fd);
-                    new_fd = -1;
-                }
+                close(new_fd);
+                new_fd = -1;
 
                 if (buf)
                 {
@@ -236,6 +234,13 @@ int myst_copy_host_directory_recursively(
                     locals->symlink_target,
                     sizeof(locals->symlink_target));
                 ECHECK(n);
+                if (n == sizeof(locals->symlink_target))
+                {
+                    myst_eprintf(
+                        "host symlink is too long (truncated): %s\n",
+                        locals->src_path);
+                    ERAISE(-EINVAL);
+                }
 
                 locals->symlink_target[n] = '\0';
                 ECHECK(symlink(locals->symlink_target, locals->dst_path));

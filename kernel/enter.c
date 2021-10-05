@@ -810,7 +810,7 @@ int myst_enter_kernel(myst_kernel_args_t* args)
     ECHECK(_copy_host_etc_files());
 
     /* Setup sysfs */
-    sysfs_setup();
+    ECHECK(sysfs_setup());
 
     /* Set the 'run-proc' which is called by the target to run new threads */
     ECHECK(myst_tcall_set_run_thread_function(myst_run_thread));
@@ -967,6 +967,9 @@ int myst_enter_kernel(myst_kernel_args_t* args)
 
     /* Tear down the dev file system */
     devfs_teardown();
+
+    /* Tear down the sys file system */
+    sysfs_teardown();
 
     /* Tear down the RAM file system */
     _teardown_ramfs();

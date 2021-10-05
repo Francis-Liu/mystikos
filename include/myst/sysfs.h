@@ -14,4 +14,6 @@
 
 int sysfs_setup();
 
+int sysfs_teardown();
+
 #endif /* _MYST_SYSFS_H */
