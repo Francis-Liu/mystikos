@@ -38,6 +38,7 @@
 #include <openenclave/host.h>
 
 #include "../shared.h"
+#include "copy_file.h"
 #include "exec.h"
 #include "fsgsbase.h"
 #include "myst_u.h"
@@ -210,7 +211,8 @@ int exec_launch_enclave(
     const char* argv[],
     const char* envp[],
     const myst_args_t* mount_mappings,
-    struct myst_options* options)
+    struct myst_options* options,
+    const myst_args_t* copy_host_files)
 {
     oe_result_t r;
     int retval;
@@ -218,6 +220,7 @@ int exec_launch_enclave(
     myst_buf_t argv_buf = MYST_BUF_INITIALIZER;
     myst_buf_t envp_buf = MYST_BUF_INITIALIZER;
     myst_buf_t mount_mappings_buf = MYST_BUF_INITIALIZER;
+    myst_buf_t copy_host_files_buf = MYST_BUF_INITIALIZER;
     pid_t target_tid = (pid_t)syscall(SYS_gettid);
     struct timespec start_time;
     oe_enclave_setting_context_switchless_t switchless_setting = {0, 0};
@@ -276,6 +279,16 @@ int exec_launch_enclave(
             _err("failed to serialize mapping parameter stings");
     }
 
+    /* Serialize the file name list strings */
+    if (copy_host_files->data)
+    {
+        if (myst_buf_pack_strings(
+                &copy_host_files_buf,
+                copy_host_files->data,
+                copy_host_files->size) != 0)
+            _err("failed to serialize the \"copy from host\" file list stings");
+    }
+
     /* Get clock times right before entering the enclave */
     shm_create_clock(&shared_memory, CLOCK_TICK);
 
@@ -304,7 +317,9 @@ int exec_launch_enclave(
         (uint64_t)&_event,
         target_tid,
         start_time.tv_sec,
-        start_time.tv_nsec);
+        start_time.tv_nsec,
+        copy_host_files_buf.data,
+        copy_host_files_buf.size);
     if (r != OE_OK)
         _err("failed to enter enclave: result=%s", oe_result_str(r));
 
@@ -389,6 +404,7 @@ int exec_action(int argc, const char* argv[], const char* envp[])
     char rootfs_path[] = "/tmp/mystXXXXXX";
     uint64_t heap_size = 0;
     const char* commandline_config = NULL;
+    myst_args_t copy_host_files = {0};
     myst_args_t mount_mapping = {0};
     myst_buf_t roothash_buf = MYST_BUF_INITIALIZER;
 
@@ -696,6 +712,11 @@ int exec_action(int argc, const char* argv[], const char* envp[])
     unlink(pubkeys_path);
     unlink(roothashes_path);
 
+    if (get_host_file_copy_list(&copy_host_files) != 0)
+    {
+        _err("failed to get the list of host files to be copied into enclave");
+    }
+
     return_status = exec_launch_enclave(
         details->enc.path,
         type,
@@ -703,8 +724,11 @@ int exec_action(int argc, const char* argv[], const char* envp[])
         argv + 3,
         envp,
         &mount_mapping,
-        &options);
+        &options,
+        &copy_host_files);
     myst_args_release(&mount_mapping);
+    myst_args_release(&copy_host_files);
+    free_host_file_copy_list();
 
     free_region_details();
 
