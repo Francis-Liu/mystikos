@@ -72,7 +72,7 @@ local-rootfs: local-appdir
 local-one: local-rootfs
 	$(MYST_EXEC) local-rootfs $(OPTS) --strace --etrace --app-config-path config.json /usr/local/bin/python -m pytest /workspace/pytorch/test/test_autograd.py -v -s -k "test_no_grad_copy_sparse"
 
-gdb: local-rootfs
+local-gdb: local-rootfs
 	$(MYST_GDB) --args $(MYST_EXEC) --strace --etrace --max-affinity-cpus=1 local-rootfs --app-config-path config.json /usr/local/bin/python -m pytest /workspace/pytorch/test/test_autograd.py -v -s -k "test_no_grad_copy_sparse"
 
 .PHONY: docker-run
