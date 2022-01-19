@@ -4,6 +4,7 @@
 #include "copy_file.h"
 
 const char* _host_paths[] = {"/sys/devices/system/cpu/cpu*/cache/index*/size",
+                             "/sys/devices/system/cpu/cpu*/tsc_freq_khz",
                              "/sys/devices/system/cpu/kernel_max",
                              "/sys/devices/system/cpu/possible",
                              "/sys/devices/system/cpu/present",
