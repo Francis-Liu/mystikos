@@ -16,4 +16,4 @@ cat /sys/devices/system/cpu/cpu0/tsc_freq_khz
   - mystikos has 1024 threads by default; graphene is configued with 10 threads
   - In both graphene and mystikos, the `label_image` program uses 10 threads by default
 - Server: Azure ACC VM "Standard DC24s v3 (24 vcpus, 192 GiB memory)"
-- Result: average of 10 repeated runs [PerfResult](PerfResult.xlsx]
+- Result: average of 10 repeated runs [PerfResult](PerfResult.xlsx)
