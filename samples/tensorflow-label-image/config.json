@@ -3,6 +3,6 @@
     "ProductID": 1,
     "SecurityVersion": 1,
     "CurrentWorkingDirectory": "/app",
-    "UserMemSize": "16g",
+    "UserMemSize": "512M",
     "HostApplicationParameters": true
 }

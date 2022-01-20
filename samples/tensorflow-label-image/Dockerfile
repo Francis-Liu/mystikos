@@ -9,7 +9,6 @@ RUN wget https://github.com/bazelbuild/bazel/releases/download/0.16.1/bazel-0.16
 RUN chmod +x bazel-0.16.1-installer-linux-x86_64.sh
 RUN ./bazel-0.16.1-installer-linux-x86_64.sh --user
 
-ADD label_image.manifest.template .
 ADD tensorflow.tar.gz .
 RUN mv tensorflow-1.9.0 tensorflow
 
