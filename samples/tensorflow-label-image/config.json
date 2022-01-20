@@ -1,8 +1,8 @@
 {
-    "Debug": 1,
+    "Debug": 0,
     "ProductID": 1,
     "SecurityVersion": 1,
     "CurrentWorkingDirectory": "/app",
-    "UserMemSize": "512M",
+    "UserMemSize": "4G",
     "HostApplicationParameters": true
 }

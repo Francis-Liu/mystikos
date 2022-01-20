@@ -1,5 +1,4 @@
-# FROM python:3.9.7-buster
-FROM python:3.6-slim-buster
+FROM python:3.8.10-slim-buster
 
 RUN apt-get update && \
     apt-get install -y python-dev python-pip wget git pkg-config zip g++ zlib1g-dev unzip

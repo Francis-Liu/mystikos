@@ -24,7 +24,7 @@ rootfs: appdir
 	$(MYST) mkext2 appdir rootfs
 
 run: rootfs
-	$(MYST_EXEC) rootfs $(OPTS) --app-config-path config.json /app/label_image -m /app/inception_v3.tflite -i /app/image.bmp -t 4
+	$(MYST_EXEC) rootfs $(OPTS) --app-config-path config.json /app/label_image -m /app/inception_v3.tflite -i /app/image.bmp
 
 clean:
 	rm -rf rootfs appdir
